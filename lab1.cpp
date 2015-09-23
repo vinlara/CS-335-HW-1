@@ -177,7 +177,7 @@ void makeParticle(Game *game, int x, int y) {
 	p->s.center.x = x;
 	p->s.center.y = y;
 	p->velocity.y = rnd()*0.1 - 0.5;
-	p->velocity.x =  1.0 + rnd()*0.1;
+	p->velocity.x = 0;                   /*1.0 + rnd()*0.1;*/
 	game->n++;
 }
 
@@ -244,20 +244,17 @@ void movement(Game *game)
 		p->s.center.y += p->velocity.y;
 		p->velocity.y -= GRAVITY;
 
-	//my changes
-
-	//if (p->s.center.y == 500 && p->s.center.x <= 220 && p->s.center.x >= 20)
-	//	p->velocity.y = 4; 
 
 	//check for collision with shapes...
 	Shape *s = &game->box;	
 	if (p->s.center.y < s->center.y + s->height && 
 		p->s.center.y > s->center.y - s->height &&
 		p->s.center.x >= s->center.x - s->width && 
-		p->s.center.x <= s->center.x + s->width)
-                p->velocity.y *= -1.0;
-	        //p->velocity.x +=  1.0 + rnd()*0.1;
-
+		p->s.center.x <= s->center.x + s->width){
+	    	p->s.center.y = s->center.y + s->height;
+                p->velocity.y *= -.5;
+	        p->velocity.x *= 5;                                 /*1.0 + rnd()*0.1;*/
+	}
 	
 	//check for off-screen
 	if (p->s.center.y < 0.0 || p->s.center.y > WINDOW_HEIGHT ) {
