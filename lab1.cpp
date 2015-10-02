@@ -38,7 +38,7 @@
 #define WINDOW_WIDTH  800
 #define WINDOW_HEIGHT 600
 
-#define MAX_PARTICLES 1000
+#define MAX_PARTICLES 10000
 #define GRAVITY 0.1
 
 //X Windows variables
@@ -65,8 +65,11 @@ struct Particle {
 
 struct Game {
 	Shape box;
+	Shape circle;
 	Particle particle[MAX_PARTICLES];
 	int n;
+	int lastMousex;
+	int lastMousey;
 };
 
 //Function prototypes
@@ -90,10 +93,15 @@ int main(void)
 	game.n=0;
 
 	//declare a box shape
+	//game.box.width[0] to make more boxes then look for where declared and put for loop
 	game.box.width = 100;
 	game.box.height = 10;
 	game.box.center.x = 120 + 5*65;
 	game.box.center.y = 500 - 5*60;
+
+	game.circle.center.x = 600;
+	 game.circle.center.y = 50;
+	game.circle.radius = 100;
 
 	//start animation
 	while(!done) {
@@ -177,7 +185,7 @@ void makeParticle(Game *game, int x, int y) {
 	p->s.center.x = x;
 	p->s.center.y = y;
 	p->velocity.y = rnd()*0.1 - 0.5;
-	p->velocity.x = 0;                   /*1.0 + rnd()*0.1;*/
+	p->velocity.x = 2;                   /*1.0 + rnd()*0.1;*/
 	game->n++;
 }
 
@@ -185,7 +193,7 @@ void check_mouse(XEvent *e, Game *game)
 {
 	static int savex = 0;
 	static int savey = 0;
-	static int n = 0;
+	//static int n = 0; took out
 
 	if (e->type == ButtonRelease) {
 		return;
@@ -211,9 +219,13 @@ void check_mouse(XEvent *e, Game *game)
 		savey = e->xbutton.y;
 		int y = WINDOW_HEIGHT - e->xbutton.y;
 		for (int i=0; i<10; i++)
-		    makeParticle(game, e->xbutton.x, y);
+		 	makeParticle(game, e->xbutton.x, y);
 			//if (n++ < 10;
 			//return;
+	
+			game->lastMousex = e->xbutton.x;  //added
+			game->lastMousey = y;    //added
+		
 	}
 }
 
@@ -236,7 +248,10 @@ void movement(Game *game)
 	Particle *p;
 
 	if (game->n <= 0)
-		return;
+	    return;
+
+	for(int i; i<10; i++)
+	    makeParticle(game, game->lastMousex, game->lastMousey);
 
 	for(int i=0; i<game->n; i++){
 	    	p = &game->particle[i];
@@ -244,18 +259,40 @@ void movement(Game *game)
 		p->s.center.y += p->velocity.y;
 		p->velocity.y -= GRAVITY;
 
+	
+
 
 	//check for collision with shapes...
-	Shape *s = &game->box;	
+	//add for loop using j and number of boxes
+	Shape *s = &game->box;	 //make &game->box[]
 	if (p->s.center.y < s->center.y + s->height && 
 		p->s.center.y > s->center.y - s->height &&
 		p->s.center.x >= s->center.x - s->width && 
 		p->s.center.x <= s->center.x + s->width){
 	    	p->s.center.y = s->center.y + s->height;
                 p->velocity.y *= -.5;
-	        p->velocity.x *= 5;                                 /*1.0 + rnd()*0.1;*/
+	        p->velocity.x = 2;                                 /*1.0 + rnd()*0.1;*/
 	}
-	
+
+	//check circle collison
+	float d0,d1,dist;
+	d0 = p->s.center.x - game->circle.center.x;
+	d1 = p->s.center.y - game->circle.center.y;
+	dist = sqrt(d0*d0 + d1*d1);
+	if(dist <= game->circle.radius) {
+	    //p->velocity.y = -p->velocity.y;
+            //float v[2];
+	    d0 /= dist;
+	    d1 /= dist;
+	    d0 *= game->circle.radius * 1.01;
+	    d1 *= game->circle.radius * 1.01;
+	    p->s.center.x = game->circle.center.x + d0;
+	    p->s.center.y = game->circle.center.y + d1;
+	    p->velocity.x += d0 * 0.002;
+	    p->velocity.y += d0 * 0.002;
+
+	}
+	//end for loop
 	//check for off-screen
 	if (p->s.center.y < 0.0 || p->s.center.y > WINDOW_HEIGHT ) {
 		//std::cout << "off screen" << std::endl;
@@ -270,10 +307,38 @@ void render(Game *game)
 	float w, h;
 	glClear(GL_COLOR_BUFFER_BIT);
 	//Draw shapes...
+	//
+	//circle
+	static int firsttime=1;
+	static int verts[10][2];
+	static int n = 100;
+	if (firsttime) {
+
+            float angle = 0.0;
+	    float inc = (3.14159 * 2.0) / (float)n;
+	   for (int i=0; i<n; i++) {
+	       verts[i][0] = cos(angle) * game->circle.radius + game->circle.center.x;
+	       verts[i][1] = sin(angle) * game->circle.radius + game->circle.center.y;
+	       angle += inc;
+           }
+
+	    firsttime=0;
+        }
+	glColor3ub(90,140,90);
+        glPushMatrix();
+	glBegin(GL_TRIANGLE_FAN);
+	    for (int i=0; i<n; i++){
+		glVertex2i(verts[i][0], verts[i][1]);
+	    }
+	glEnd();
+	glPopMatrix();
+		
+	
 
 	//draw box
 	Shape *s;
 	glColor3ub(90,140,90);
+	//for ( int j=0; j<2; j++)
 	s = &game->box;
 	glPushMatrix();
 	glTranslatef(s->center.x, s->center.y, s->center.z);
