@@ -34,12 +34,18 @@
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/glx.h>
+extern"C" {
+    #include "fonts.h"
+}
 
 #define WINDOW_WIDTH  800
 #define WINDOW_HEIGHT 600
 
 #define MAX_PARTICLES 4000
 #define GRAVITY 0.1
+//for check keys
+int bubbler=0;
+//int keys[65536];
 
 //X Windows variables
 Display *dpy;
@@ -93,17 +99,28 @@ int main(void)
 	game.n=0;
 
 	//declare a box shape
-	//game.box.width[0] to make more boxes then look for where declared and put for loop
 	game.box[0].width = 100;
 	game.box[0].height = 10;
-	game.box[0].center.x = 120 + 5*65;
+	game.box[0].center.x = 270 + 5*65;
 	game.box[0].center.y = 500 - 5*60;
     game.box[1].width = 100;
     game.box[1].height = 10;
-    game.box[1].center.x = 120 + 5*65 + 50;
-    game.box[1].center.y = 500 - 5*60 - 30;
-	game.circle.center.x = 600;
-	game.circle.center.y = 50;
+    game.box[1].center.x = 270 + 5*65 - 75;
+    game.box[1].center.y = 500 - 5*60 + 45;
+    game.box[2].width = 100;
+    game.box[2].height = 10;
+    game.box[2].center.x = 270 + 5*65 - 150;
+    game.box[2].center.y = 500 - 5*60 + 90;
+    game.box[3].width = 100;
+    game.box[3].height = 10;
+    game.box[3].center.x = 270 + 5*65 - 225;
+    game.box[3].center.y = 500 - 5*60 + 135;
+    game.box[4].width = 100;
+    game.box[4].height = 10;
+    game.box[4].center.x = 270 + 5*65 - 300;
+    game.box[4].center.y = 500 - 5*60 + 180;
+	game.circle.center.x = 750;
+	game.circle.center.y = -25;
 	game.circle.radius = 100;
 
 	//start animation
@@ -175,6 +192,9 @@ void init_opengl(void)
 	glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
 	//Set the screen background color
 	glClearColor(0.1, 0.1, 0.1, 1.0);
+    //Do this to allow fonts
+    glEnable(GL_TEXTURE_2D);
+    initialize_fonts();
 }
 
 #define rnd() (float)rand() / (float)RAND_MAX
@@ -221,9 +241,11 @@ void check_mouse(XEvent *e, Game *game)
 		savex = e->xbutton.x;
 		savey = e->xbutton.y;
 		int y = WINDOW_HEIGHT - e->xbutton.y;
-		for (int i=0; i<10; i++)
-		 	    makeParticle(game, e->xbutton.x, y);
-			//if (n++ < 10;
+        /*if(bubbler){
+		    for (int i=0; i<10; i++)
+		 	    makeParticle(game, e->xbutton.x, y); //make particle if mouse moves
+        }*/
+            //if (n++ < 10;
 			//return;
 	
 			game->lastMousex = e->xbutton.x;  //added
@@ -234,14 +256,46 @@ void check_mouse(XEvent *e, Game *game)
 
 int check_keys(XEvent *e, Game *game)
 {
+   /* static int shift=0;
+    int key = XLookupKeysym(&e->xkey, 0);
+    if(e->type == KeyRelease) {
+        if (key == XK_Shift_L || key == XK_Shift_R)
+            shift=0;
+        return;
+    }
+    if (e->type == KeyPress) {
+        if(key == XK_Shift_L || key == XK_Shift_R) {
+            shift=1;
+            return;
+        }
+    }else {
+        return;
+    }
+    switch(key) {
+        case XK_Escape:
+            return 1;
+        case XK_d:
+            bubbler ^= 1;
+    }
+}
+*/
 	//Was there input from the keyboard?
 	if (e->type == KeyPress) {
 		int key = XLookupKeysym(&e->xkey, 0);
-		if (key == XK_Escape) {
+	
+    
+        if (key == XK_Escape) {
 			return 1;
-		}
-		//You may check other keys here.
+  	}
+		//You may check other keys here
+        if (key == XK_b) {
+            bubbler ^= 1 ;
+           	std::cout << "b works " << bubbler <<  std::endl;
 
+
+            return 0; 
+        }
+            
 	}
 	return 0;
 }
@@ -253,8 +307,10 @@ void movement(Game *game)
 	if (game->n <= 0)
 	    return;
 
-	for(int i=0; i<10; i++)
-	    makeParticle(game, game->lastMousex, game->lastMousey);
+    /*if(bubbler){
+	    for(int i=0; i<10; i++)
+	         makeParticle(game, game->lastMousex, game->lastMousey);
+    }*/ //make constant particles
 
 	for(int i=0; i<game->n; i++){
 	    p = &game->particle[i];
@@ -267,7 +323,7 @@ void movement(Game *game)
 
 	//check for collision with shapes...
 	//add for loop using j and number of boxes
-    for (int j=0; j<2; j++) {
+    for (int j=0; j<5; j++) {
 	        Shape *s = &game->box[j];	 //make &game->box[]
 	        if (p->s.center.y < s->center.y + s->height && 
 		                    p->s.center.y > s->center.y - s->height &&
@@ -309,7 +365,8 @@ void movement(Game *game)
 }
 
 void render(Game *game)
-{
+{ 
+    
 	float w, h;
 	glClear(GL_COLOR_BUFFER_BIT);
 	//Draw shapes...
@@ -337,12 +394,16 @@ void render(Game *game)
 	glEnd();
 	glPopMatrix();
 		
-	
+    //press b to turn on bubbler
+    if(bubbler){
+	    for(int i=0; i<10; i++)
+	         makeParticle(game, game->lastMousex, game->lastMousey);
+    }
 
 	//draw box
 	Shape *s;
 	glColor3ub(90,140,90);
-	for (int j=0; j<2; j++){
+	for (int j=0; j<5; j++){
 	        s = &game->box[j];
 	        glPushMatrix();
 	        glTranslatef(s->center.x, s->center.y, s->center.z);
@@ -372,7 +433,36 @@ void render(Game *game)
 		    glEnd();
 		    glPopMatrix();
 	}
-    
+    Rect r[4];
+    Rect ri;
+    glBindTexture(GL_TEXTURE_2D, 0);   
+ 
+    r[0].bot =  495 - 5 * 60;
+    r[0].left = 270 + 5 * 65;
+    r[0].center = -100;
+    r[1].bot =  495 - 5 * 60 + 45;
+    r[1].left = 270 + 5 * 65 - 75;
+    r[1].center = -100;      
+    r[2].bot =  495 - 5 * 60 + 90;
+    r[2].left = 270 + 5 * 65 - 150;
+    r[2].center = -100;
+    r[3].bot =  495 - 5 * 60 + 135;
+    r[3].left = 270 + 5 * 65 - 225;
+    r[3].center = -100;      
+    r[4].bot =  495 - 5 * 60 + 180;
+    r[4].left = 270 + 5 * 65 - 300;
+    r[4].center = -100;      
+    ri.bot =  495 - 5 * 60 + 225;
+    ri.left = 270 + 5 * 65 - 375;
+    ri.center = -100;      
+
+    unsigned int cref = 0x00ffff;
+    ggprint8b(&r[0], 6, cref, "Maintenance");
+    ggprint8b(&r[1], 6, cref, "Testing");
+    ggprint8b(&r[2], 6, cref, "Coding");
+    ggprint8b(&r[3], 6, cref, "Design");
+    ggprint8b(&r[4], 6, cref, "Requirements");
+    ggprint8b(&ri, 6, 0x00ffffff, "Waterfall Model");
 }
 
 
