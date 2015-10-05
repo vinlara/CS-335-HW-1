@@ -41,7 +41,7 @@ extern"C" {
 #define WINDOW_WIDTH  800
 #define WINDOW_HEIGHT 600
 
-#define MAX_PARTICLES 4000
+#define MAX_PARTICLES 8000
 #define GRAVITY 0.1
 //for check keys
 int bubbler=0;
@@ -119,7 +119,7 @@ int main(void)
     game.box[4].height = 10;
     game.box[4].center.x = 270 + 5*65 - 300;
     game.box[4].center.y = 500 - 5*60 + 180;
-	game.circle.center.x = 750;
+	game.circle.center.x = 760;
 	game.circle.center.y = -25;
 	game.circle.radius = 100;
 
@@ -136,6 +136,7 @@ int main(void)
 		glXSwapBuffers(dpy, win);
 	}
 	cleanupXWindows();
+	cleanup_fonts();
 	return 0;
 }
 
@@ -208,7 +209,7 @@ void makeParticle(Game *game, int x, int y) {
 	p->s.center.x = x;
 	p->s.center.y = y;
 	p->velocity.y = rnd()*0.1 - 0.5;
-	p->velocity.x = 1.0 + rnd()*0.1;                   /*1.0 + rnd()*0.1;*/
+	p->velocity.x = 0 + rnd()*1;                   /*1.0 + rnd()*0.1;*/
 	game->n++;
 }
 
@@ -329,8 +330,10 @@ void movement(Game *game)
 		                    p->s.center.y > s->center.y - s->height &&
 		                    p->s.center.x >= s->center.x - s->width && 
 		                    p->s.center.x <= s->center.x + s->width){
-                    p->velocity.y *= -0.25;
+                    p->velocity.y *= -0.45;
                     p->s.center.y = s->center.y + s->height + 0.01;
+		    p->velocity.x = 1.0;
+
 	    	       // p->s.center.y = s->center.y + s->height;
                    // p->velocity.y *= -.5;
 	               // p->velocity.x = 2;                                 /*1.0 + rnd()*0.1;*/
@@ -421,7 +424,7 @@ void render(Game *game)
 	//draw all particles here
 	for(int i=0; i<game->n; i++){
 		    glPushMatrix();
-		    glColor3ub(150,160,220);
+		    glColor3ub(rnd()*150,rnd()*160,220);
 		    Vec *c = &game->particle[i].s.center;
 		    w = 2;
 		    h = 2;
@@ -434,7 +437,8 @@ void render(Game *game)
 		    glPopMatrix();
 	}
     Rect r[4];
-    Rect ri;
+    Rect re;
+    Rect rec;
     glBindTexture(GL_TEXTURE_2D, 0);   
  
     r[0].bot =  495 - 5 * 60;
@@ -449,20 +453,20 @@ void render(Game *game)
     r[3].bot =  495 - 5 * 60 + 135;
     r[3].left = 270 + 5 * 65 - 225;
     r[3].center = -100;      
-    r[4].bot =  495 - 5 * 60 + 180;
-    r[4].left = 270 + 5 * 65 - 300;
-    r[4].center = -100;      
-    ri.bot =  495 - 5 * 60 + 225;
-    ri.left = 270 + 5 * 65 - 375;
-    ri.center = -100;      
+    re.bot =  495 - 5 * 60 + 180;
+    re.left = 270 + 5 * 65 - 300;
+    re.center = -100;      
+    rec.bot =  495 - 5 * 60 + 225;
+    rec.left = 270 + 5 * 65 - 375;
+    rec.center = -100;      
 
     unsigned int cref = 0x00ffff;
-    ggprint8b(&r[0], 6, cref, "Maintenance");
-    ggprint8b(&r[1], 6, cref, "Testing");
-    ggprint8b(&r[2], 6, cref, "Coding");
-    ggprint8b(&r[3], 6, cref, "Design");
-    ggprint8b(&r[4], 6, cref, "Requirements");
-    ggprint8b(&ri, 6, 0x00ffffff, "Waterfall Model");
+    ggprint8b(&r[0], 16, cref, "Maintenance");
+    ggprint8b(&r[1], 16, cref, "Testing");
+    ggprint8b(&r[2], 16, cref, "Coding");
+    ggprint8b(&r[3], 16, cref, "Design");
+    ggprint8b(&re, 16, cref, "Requirements");
+    ggprint16(&rec, 16, 0x00ffffff, "Waterfall Model");
 }
 
 
